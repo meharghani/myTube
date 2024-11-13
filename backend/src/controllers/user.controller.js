@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
-import mongoose from "mongoose"
+import mongoose, { model } from "mongoose"
 
 
 
@@ -319,7 +319,19 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
    .json(new ApiResponse(200, channel[0], "Get channel successfully"))
 
 })
-
+const addvideoToWatchHistory = asyncHandler(async(req, res)=>{
+   const userId = req.user?._id
+   const {videoId} = req.params
+   const user = await User.findById(userId).select("-password -refreshToken")
+   if(!user){
+      throw new apiError(400,"User not found")
+   }
+   user.watchHistory.push(videoId)
+   await user.save()
+   return res
+   .status(200)
+   .json(new ApiResponse(200, user.watchHistory, "Video added to watch history"))
+})
 const getWatchHistory = asyncHandler(async(req, res)=>{
    const user = await User.aggregate([
       {
@@ -329,7 +341,7 @@ const getWatchHistory = asyncHandler(async(req, res)=>{
       },
       {
          $lookup:{
-            from:"vidoes",
+            from:"videos",
             localField:"watchHistory",
             foreignField:"_id",
             as:"watchHistory",
@@ -378,5 +390,6 @@ export {
     updateUserDetails,
     updateUserAvatar,
     getUserChannelProfile,
+    addvideoToWatchHistory,
     getWatchHistory
 }

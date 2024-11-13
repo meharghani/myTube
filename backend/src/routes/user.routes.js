@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { 
+    addvideoToWatchHistory,
     changeCurrentPassword, 
     getCurrentUser, 
     getUserChannelProfile, 
@@ -43,5 +44,6 @@ router.route("/update-avatar").patch(
 )
 router.route("/user-channel/:username").post(verifyJWT, getUserChannelProfile)
 router.route("/history").get(verifyJWT, getWatchHistory)
+router.route("/add-to-history/:videoId").post(verifyJWT,addvideoToWatchHistory)
 
 export default router
