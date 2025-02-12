@@ -8,6 +8,7 @@ import mongoose, { model } from "mongoose"
 
 
 
+
 const generateAccessAndRefreshToken = async (userId)=>{
    try {
      const user = await User.findById(userId)
@@ -22,11 +23,11 @@ const generateAccessAndRefreshToken = async (userId)=>{
      
      return {accessToken, refreshToken}
    } catch (error) {
-      throw new apiError(500,"Something went wrong while generating access or refresh token")
+      return next( new apiError(500,"Something went wrong while generating access or refresh token"))
    }
 }
 
-const registerUser = asyncHandler(async(req, res)=>{
+const registerUser = asyncHandler(async(req, res,next)=>{
    // get user detail from frontend
    const {fullname, username, email, password} = req.body
 
@@ -36,14 +37,14 @@ const registerUser = asyncHandler(async(req, res)=>{
    if(
     [fullname,email,username,password].some((field)=> field?.trim() === "")
    ){
-    throw new apiError(400, "All fields are required")
+    return next( new apiError(400, "All fields are required"))
    }
    // check if user already exists
    const existedUser = await User.findOne({
     $or: [{username},{email}]
    })
    if(existedUser){
-    throw new apiError(409,"User already exist" )
+    return next( new apiError(409,"User already exist" ))
    }
    // check for images and avatar
  
@@ -55,7 +56,7 @@ const registerUser = asyncHandler(async(req, res)=>{
       coverImageLocalPath = req.files.coverImage[0].path
    }
    if(!avatarLocalPath){
-    throw new apiError(400, "Avatar is required")
+    return next( new apiError(400, "Avatar is required"))
    }
    // upload images to cloudinary
    const avatar = await uploadOnCloudinary(avatarLocalPath)
@@ -87,7 +88,7 @@ const registerUser = asyncHandler(async(req, res)=>{
    )
 })
 
-const loginUser = asyncHandler(async(req, res)=>{
+const loginUser = asyncHandler(async(req, res,  next)=>{
    // get data from user
    const {email, username, password} = req.body
    // username or email 
@@ -99,12 +100,15 @@ const loginUser = asyncHandler(async(req, res)=>{
       $or: [{username},{email}]
    })
    if(!user){
-      throw new apiError(404, "User does not exist")
+      return next( new apiError(404, "User does not exist"))
    }
    //password check
    const isPasswordValid = await user.isPasswordCorrect(password)
    if(!isPasswordValid){
-      throw new apiError(401, "Invalid user credentials")
+     
+      return next( new apiError(401, "Invalid user credentials"))
+     
+      
    }
    //access and refresh token 
    const {accessToken, refreshToken} =await generateAccessAndRefreshToken(user._id)
@@ -150,9 +154,12 @@ const logutUser = asyncHandler(async(req, res)=>{
 })
 
 const refreshAccessToken = asyncHandler(async(req,res)=>{
-  const incomingRefreshToken =  req.cookies.refreshToken
+  const incomingRefreshToken =  req.cookies?.refreshToken || req.headers("Authorization")?.replace("Bearer ", "")
+  console.log(incomingRefreshToken)
   if(!incomingRefreshToken){
+  
    throw new apiError((401,"Unauthorized request"))
+ 
   }
   try {
    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)

@@ -63,17 +63,18 @@ const getAllVidoes = asyncHandler(async(req, res)=>{
     sortOptions[sortBy] = sortType === 'asc' ? 1 : -1
 
 
-    const vidoes = await Video.find(fillter)
+    const videos = await Video.find(fillter)
     .sort(sortOptions)
     .skip((page-1) * limit)
     .limit(parseInt(limit))
+    .populate('owner')
 
     const totalVideos = await Video.countDocuments(fillter)
 
     return res
     .status(200)
     .json(new ApiResponse(200, {
-        vidoes,
+        videos,
          total:totalVideos,
           page: parseInt(page), 
           limit: parseInt(limit),

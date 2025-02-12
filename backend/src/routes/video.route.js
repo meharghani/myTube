@@ -18,8 +18,10 @@ router.route("/").post(
             maxCount:1
         }
     ]),
-    publishVideo).get(getAllVidoes)
+    publishVideo)
+    
 
+router.route("/all").get(getAllVidoes)
 router.route("/:videoId")
 .get(getVideoById)
 .patch(verifyJWT,upload.single("thumbnail"),updateVideo)
